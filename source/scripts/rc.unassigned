@@ -25,11 +25,11 @@ function unassigned_mount() {
 	global $DEVNAME, $paths, $remove;
 
 	# Mount local disks
-	foreach(get_unasigned_disks() as $name => $disk) {
+	foreach(get_unassigned_disks() as $name => $disk) {
 		$device = $disk['device'];
 		foreach ($disk['partitions'] as $partition)
 		{
-			if ( preg_match("#".$DEVNAME."#i", realpath($partition)) || $DEVNAME == "auto" || $DEVNAME == "autodevices") {
+			if ( preg_match("#".$DEVNAME."#i", realpath($partition)) || $DEVNAME == "auto" || $DEVNAME == "autodevices" ) {
 				$info = get_partition_info($partition, true);
 				if ($info['serial'] == "") {
 					unassigned_log("Disk '{$device}' does not have a serial number and cannot be mounted.");
@@ -41,6 +41,7 @@ function unassigned_mount() {
 				}
 				if (! $info['automount'] && ( $DEVNAME == "auto" || $DEVNAME == "autodevices" || isset($_ENV['DEVNAME']) )) {
 					unassigned_log("Disk with serial '{$info['serial']}', mountpoint '".basename($info['mountpoint'])."' is not set to auto mount and will not be mounted.");
+					setSleepTime($device);
 					continue;
 				}
 				if ($info['label'] == "UNRAID") {
@@ -58,9 +59,12 @@ function unassigned_mount() {
 						}
 						setSleepTime($device);
 						execute_script($info, "ADD");
+						/* Update the partition info */
+						$info = get_partition_info($partition, true);
 						export_disk($info, true);
 					} else {
 						unassigned_log("Partition '{$info['label']}' could not be mounted.");
+						setSleepTime($device);
 						execute_script($info, "ERROR_MOUNT");
 					}
 				} else {
@@ -82,9 +86,19 @@ function unassigned_mount() {
 				unassigned_log("Remote SMB/NFS share found with the following attributes: ".(implode(', ', array_map(function($v, $k){$v = (strpos($k, "pass") !== false) ? "*******" : $v; return "$k='$v'"; }, $info, array_keys($info)))), "DEBUG");
 				addFile(sprintf($paths['unmounting'],basename($info['device'])));
 				if (do_mount( $info )) {
-					add_smb_share($info['mountpoint'], $info['device'], FALSE);
+					if ($info['smb_share']) {
+						add_smb_share($info['mountpoint'], $info['device'], FALSE);
+						/* Update the samba mount status */
+						foreach (get_samba_mounts() as $info) {
+						$device = $info['device'];
+							if ( $DEVNAME == $device ) {
+								export_disk($info, true);
+								break;
+							}
+						}
+					}
 					execute_script($info, "ADD");
-					export_disk($info, true);
+
 				} else {
 					execute_script($info, "ERROR_MOUNT");
 				}
@@ -96,7 +110,7 @@ function unassigned_mount() {
 	if (strpos($DEVNAME, "/mnt") === 0 || $DEVNAME == "auto" || $DEVNAME == "autodevices") {
 		foreach (get_iso_mounts() as $info) {
 			$device = $info['device'];
-			if ( $DEVNAME == $device || $DEVNAME == "auto" || $DEVNAME == "autodevices") {
+			if ( $DEVNAME == $device || $DEVNAME == "auto" || $DEVNAME == "autodevices" ) {
 				if (! $info['automount'] && ($DEVNAME == "auto" || $DEVNAME == "autodevices")) {
 					unassigned_log("ISO File mount '{$info['device']}' is not set to auto mount and will not be mounted.");
 					continue;
@@ -107,7 +121,14 @@ function unassigned_mount() {
 					add_smb_share($info['mountpoint'], $info['device'], FALSE);
 					add_nfs_share($info['mountpoint']);
 					execute_script($info, "ADD");
-					export_disk($info, true);
+					/* Update the iso mount status */
+					foreach (get_iso_mounts() as $info) {
+						$device = $info['device'];
+						if ( $DEVNAME == $device ) {
+							export_disk($info, true);
+							break;
+						}
+					}
 				} else {
 					execute_script($info, "ERROR_MOUNT");
 				}
@@ -122,7 +143,7 @@ function unassigned_umount() {
 	$force = ($DEVNAME == "all") ? TRUE : FALSE;
 
 	# Deal with local disks
-	foreach(get_unasigned_disks() as $disk) {
+	foreach(get_unassigned_disks() as $disk) {
 		$device = $disk['device'];
 		foreach ($disk['partitions'] as $partition) {
 			if ( preg_match("#".$DEVNAME."#i", realpath($partition)) || $DEVNAME == "auto" || $DEVNAME == "all" ) {

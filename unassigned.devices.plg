@@ -3,13 +3,13 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "unassigned.devices">
 <!ENTITY author    "dlandon">
-<!ENTITY version   "2020.03.02">
+<!ENTITY version   "2020.09.02">
 <!ENTITY launch    "Main/UnassignedDevices">
 <!ENTITY gitURL    "https://github.com/&author;/&name;/raw/master">
 <!ENTITY pluginURL "&gitURL;/&name;.plg">
-<!ENTITY supportURL	"https://forums.unraid.net/topic/44104-unassigned-devices-managing-disk-drives-outside-of-the-unraid-array/">
+<!ENTITY supportURL	"https://forums.unraid.net/topic/92462-unassigned-devices-managing-disk-drives-and-remote-shares-outside-of-the-unraid-array/">
 <!ENTITY packages	"/boot/config/plugins/&name;/packages">
-<!ENTITY MD5		"b528c9e79ac2e64ec700ddbc3b5930e1">
+<!ENTITY MD5		"6516aa83b5aaafef0b5c18e7f74869f8">
 ]>
 
 <PLUGIN name="&name;"
@@ -19,12 +19,181 @@
 		pluginURL="&pluginURL;"
 		support="&supportURL;"
 		icon="unlock-alt"
-		min="6.7.0"
-		max="6.8.9">
+		min="6.7.0">
 
 <CHANGES>
 ##&name;
 ###&version;
+- Fix: Remove special characters in disk mount point that were being allowed.
+
+###2020.08.29
+- Add: Issue spin down timer to disks when array is started (or disk plugged in) and they are not set for auto mount.
+
+###2020.07.26b
+- Fix: Only ping the same remote share server once for all remote mounts on that server.
+- Fix: Remove unused csrf token from UnassignedDevices.php.
+- Fix: Some code cleanup.
+- Fix: Modify screen layout and alignment of items within UD to be more consistent with Unraid.
+- Add: Query device stats (size, used, and free space) every 95 seconds instead of on every UI refresh.
+- Fix: Historical device button alignment on wide display.
+
+###2020.07.19a
+- Add: Don't query disk temperature if disk is in standby.
+- Fix: Change remote share server ping timeout to 1 second.
+- Add: Query disk drives for standby status every 42 seconds.
+- Add: Don't query SSD drives for standby status - they never idle.
+- Add: Ping remote share servers every 27 seconds.
+
+###2020.07.17a
+- Fix: Use Unraid 'poll_attributes' setting to update disk temperatures.
+- Fix: Update export data json file.
+- Fix: Resolve URL naming conflict.
+- Fix: Cut down on UI updating.
+- Fix: Don't check for duplicate share name when mounting a device.
+
+###2020.07.14
+- Fix: Php array error when checking for duplicate shares.
+- Fix: Warning when mount SSDs with discard option is set to yes and mounting a cifs or nfs device.
+
+###2020.07.13
+- Fix: Don't refresh UI when 'Automount' switch is changed.
+- Fix: Change status images to fa icons.
+- Fix: SSD partitioning to be compatible with Unraid 6.9 pool devices.  Note: this partitioning is not compatible with earlier versions of Unraid.
+
+###2020.07.12b.
+- Add: Check for duplicate share when changing mount point.
+- Add: Don't mount a disk with a duplicate share name.
+- Add: '-allow-discards' to luksopen so discard and trim will work on encrypted SSD disks.
+- Add: Proper alignment for SSD drives.
+
+###2020.07.10
+- Fix: Mount point path when changing the mount point.
+
+###2020.07.09
+- Fix: Exclamation character in udev information causing a php error.
+- Fix: Don't force unmount a device if there is an unmount error and there are no open files.
+- Add: Change mount and unmount error notifications to alerts.
+- Add: Sweet Alert dialogs for changing mount points.
+- Add: Safe name for disk label - no spaces or special characters.
+- Fix: Extend disk label command time out.
+
+###2020.07.03a
+- Fix: Alignment when creating XFS and btrfs disk partitions.
+- Fix: Wrong read list setting in samba config.
+- Fix: Don't spin down SSD disks.
+
+###2020.06.29
+- Fix: UD page always showing Simple display mode when using browser back button.
+- Fix: Dollar sign character in udev information causing a php error.
+
+###2020.06.28
+- Add: Changing the mount point will update the physical disk label.
+- Add: Switch to show/hide all device partitions.
+
+###2020.06.20
+- Add: Multi Language help tags.
+- Fix: Multi Language code cleanup and fixes for UD on Main page.
+
+###2020.06.18
+- Fix: Multi Language support.
+- Fix: Remove Docker mapping warning on SMB/NFS and ISO mounts.
+
+###2020.06.14
+- Fix: Unassigned devices detection for Unraid 6.9.
+- Fix: icon alignments for iso and smb shares.
+- Fix: Multi-language support.
+
+###2020.06.11a
+- Fix: Style change to prevent UD from interfering with notification summary.
+- Add: iocharset=utf8 to vfat mount; nls=utf8 to ntfs mount.
+- Add: Don't show preclear icon if disk has a file system.
+- Add: Don't show preclear icon if destructive mode is disabled.
+- Fix: Reversion of unmount when UD did not mount a device.
+
+###2020.06.06
+- Add: Configuration setting to turn 'force user = nobody' SMB parameter on or off.
+- Fix: More icon adjustments.
+- Fix: Center 'Mount' text on mount button.
+
+###2020.06.03
+- Fix: Allow spaces in mount point/share name.
+- Fix: Some icon adjustments.
+
+###2020.05.31c
+- Add: Don't unmount a disk if UD did not mount it.
+- Add: Don't allow partition removal on a passed through disk.
+- Fix: Share updating disk shares from UD settings.
+- Fix: Excessive logging when shares are updated from UD settings.
+- Fix: Cut down on tmp file accesses.
+- Fix: Don't check a disk for preclear status if passed through.
+- Fix: Shares toggling when device is not mounted.
+
+###2020.05.25
+- Fix: Return code handling - code Cleanup.
+- Fix: Made some minor default script modifications.
+- Fix: Removed some unused code.
+
+###2020.05.24
+- Add: Add option to settings to keep disks spun up.
+- Fix: A lot of error handling on UI.
+- Add: Shred credential and password files.
+- Fix: Even more UI cleanup.
+- Add: Don't show tmperature when a disk is passed through.
+
+###2020.05.23
+- Fix: Don't show information that does not apply.
+- Fix: Show FS when doing a file system check to show activity.
+- Fix: Each parttion was using the same script on multi-partitioned disks.
+- Fix: Minor UI issues.
+- Fix: UI code cleanup.  Fixed things that have been bothering me for a long time.
+
+###2020.05.22
+- Fix: Don't allow setting 'Pass Thru' when a disk is mounted.
+- Fix: Update support link.
+
+###2020.05.18
+- Fix: UI adjustments and code cleanup.
+
+###2020.05.17
+- Add: Share option to remote mounts.
+- Fix: Minor UI issues.
+
+###2020.05.16
+- Fix: Size mount/unmount buttons so display line height is consistent with the array device lines.
+- Fix: Adjusted some table layout.
+
+###2020.04.27
+- Fix: Add 'plus' back to expand disk partitons and remove highlight color on disk serial number.
+
+###2020.04.26b
+- Fix: Some UI changes to line things up better.  Some style sheet changes.
+
+###2020.04.03a
+- Add: Multi-language support.
+
+###2020.03.28
+- Fix: Some UI reorganization and text changes.
+- Fix: Encrypted disk file system check on disks with disk passwords.
+
+###2020.03.13a
+- Add: Mark partition read only if it mounted as read only.
+- Fix: Format of encrypted nvme disk using wrong partition name.
+- Fix: Add 'partprobe' to be sure the cached partition table is current.
+
+###2020.03.10a
+- Fix: Some UI cleanup.
+- Add: Enter password when formatting an encrypted disk for outside the array.
+- Fix: Script run manually on an encrypted disk.
+
+###2020.03.08
+- Fix: Remove max version.
+
+###2020.03.06
+- Add: Format disks xfs and btrfs encrypted that can be added to the array.  Unraid 6.8 only.
+- Add: Per disk password to mount encrypted disks that do not use the array password.
+- Fix: UI code cleanup.
+
+###2020.03.02
 - Fix: Remove custom style sheets.
 
 ###2020.03.01a
@@ -1060,10 +1229,9 @@ chmod +x /usr/local/emhttp/plugins/&name;/scripts/* /usr/local/emhttp/plugins/&n
 ln -sf /usr/local/emhttp/plugins/&name;/scripts/rc.unassigned /usr/local/sbin
 ln -sf /usr/local/emhttp/plugins/&name;/scripts/mkmbr.sh /usr/local/sbin
 
-# create mount point
+# create state folder and mount point
 rm -rf /var/state/&name;
 mkdir -p /mnt/disks /var/state/&name;
-chown nobody:users /mnt/disks
 chmod 777 /var/state/&name;
 
 # create a tmpfs mountpoint at /mnt/disks
@@ -1082,6 +1250,7 @@ if ! mountpoint -q /mnt/disks 2>/dev/null; then
     touch /var/state/&name;/reboot_required
   fi
 fi
+chown nobody:users /mnt/disks
 
 # Add unassigned_devices to smb-extra.conf.
 at -M -f /tmp/&name;/add-smb-extra now 2>/dev/null
@@ -1109,7 +1278,7 @@ echo ""
 echo "-----------------------------------------------------------"
 echo " &name; has been installed."
 echo " Copyright 2015, gfjardim"
-echo " Copyright 2016-2019, &author;"
+echo " Copyright 2016-2020, &author;"
 echo " Version: &version;"
 echo ""
 echo " Note:"

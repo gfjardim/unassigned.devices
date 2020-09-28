@@ -10,6 +10,19 @@
  */
 
 $plugin = "unassigned.devices";
+$docroot = $docroot ?? $_SERVER['DOCUMENT_ROOT'] ?: '/usr/local/emhttp';
+$translations = file_exists("$docroot/webGui/include/Translations.php");
+
+if ($translations) {
+	/* add translations */
+	$_SERVER['REQUEST_URI'] = 'unassigneddevices';
+	require_once "$docroot/webGui/include/Translations.php";
+} else {
+	/* legacy support (without javascript) */
+	$noscript = true;
+	require_once "$docroot/plugins/$plugin/include/Legacy.php";
+}
+
 require_once("plugins/{$plugin}/include/lib.php");
 readfile('logging.htm');
 
@@ -34,13 +47,13 @@ if ( isset($_GET['device']) && isset($_GET['owner']) ) {
 		putenv("OWNER={$owner}");
 		write_log($command."<br><br>");
 		$proc = popen($command, 'r');
-		while (!feof($proc)) {
+		while (! feof($proc)) {
 			write_log(fgets($proc));
 		}
 	} elseif ($command !== FALSE) {
-		echo "No script file to execute!";
+		echo _("No script file to execute")."!";
 	} else {
-		echo "Script is already running!";
+		echo _("Script is already running")."!";
 	}
 }
 ?>

@@ -12,6 +12,19 @@
 
 $plugin = "unassigned.devices";
 require_once("plugins/{$plugin}/include/lib.php");
+$docroot = $docroot ?? $_SERVER['DOCUMENT_ROOT'] ?: '/usr/local/emhttp';
+$translations = file_exists("$docroot/webGui/include/Translations.php");
+
+if ($translations) {
+	/* add translations */
+	$_SERVER['REQUEST_URI'] = 'unassigneddevices';
+	require_once "$docroot/webGui/include/Translations.php";
+} else {
+	/* legacy support (without javascript) */
+	$noscript = true;
+	require_once "$docroot/plugins/$plugin/include/Legacy.php";
+}
+
 readfile('logging.htm');
 
 function write_log($string) {
@@ -20,7 +33,7 @@ function write_log($string) {
 	if (empty($string)) {
 		return;
 	}
-	$string = str_replace("\n", "<br>", $string);
+	$string = str_replace("\n", "<br />", $string);
 	$string = str_replace('"', "\\\"", trim($string));
 	echo "<script>addLog(\"{$string}\");</script>";
 	@flush();
@@ -29,17 +42,27 @@ function write_log($string) {
 if ( isset($_GET['device']) && isset($_GET['fs']) ) {
 	$device	= trim(urldecode($_GET['device']));
 	$fs		= trim(urldecode($_GET['fs']));
-	$type	= isset($_GET['type']) ? trim(urldecode($_GET['type'])) : 'ro';
-	$mapper	= trim(urldecode($_GET['mapper']));
-	echo "FS: $fs<br /><br />";
+	$check_type	= isset($_GET['check_type']) ? trim(urldecode($_GET['check_type'])) : 'ro';
+	$luks	= trim(urldecode($_GET['luks']));
+	$serial	= trim(urldecode($_GET['serial']));
+	write_log("FS: $fs<br /><br />");
 	if ($fs == "crypto_LUKS") {
-		$luks	= basename($device);
-		$cmd	= "luksOpen {$mapper} {$luks}";
-		if (file_exists($var['luksKeyfile'])) {
-			$cmd	= $cmd." -d {$var['luksKeyfile']}";
-			$o		= shell_exec("/sbin/cryptsetup {$cmd} 2>&1");
+		$mapper	= basename($device);
+		$cmd	= "luksOpen {$luks} {$mapper}";
+		$pass	= decrypt_data(get_config($serial, "pass"));
+		if ($pass == "") {
+			if (file_exists($var['luksKeyfile'])) {
+				$cmd	= $cmd." -d {$var['luksKeyfile']}";
+				$o		= shell_exec("/sbin/cryptsetup {$cmd} 2>&1");
+			} else {
+				$o		= shell_exec("/usr/local/sbin/emcmd 'cmdCryptsetup={$cmd}' 2>&1");
+			}
 		} else {
-			$o		= shell_exec("/usr/local/sbin/emcmd 'cmdCryptsetup={$cmd}' 2>&1");
+			$luks_pass_file = "{$paths['luks_pass']}_".basename($luks);
+			file_put_contents($luks_pass_file, $pass);
+			$cmd	= $cmd." -d $luks_pass_file";
+			$o		= shell_exec("/sbin/cryptsetup {$cmd} 2>&1");
+			@unlink("$luks_pass_file");
 		}
 		if ($o != "") {
 			echo("luksOpen error: ".$o."<br />");
@@ -57,15 +80,15 @@ if ( isset($_GET['device']) && isset($_GET['fs']) ) {
 			$file_system = "btrfs";
 		}
 	}
-	$command = get_fsck_commands($file_system, $device, $type)." 2>&1";
+	$command = get_fsck_commands($file_system, $device, $check_type)." 2>&1";
 	write_log($command."<br /><br />");
 	$proc = popen($command, 'r');
-	while (!feof($proc)) {
+	while (! feof($proc)) {
 		write_log(fgets($proc));
 	}
 	if ($fs == "crypto_LUKS") {
-		shell_exec("/sbin/cryptsetup luksClose ".basename($luks));
+		shell_exec("/sbin/cryptsetup luksClose ".$mapper);
 	}
 }
-write_log("<center><button type='button' onclick='document.location=\"/plugins/{$plugin}/include/fsck.php?device={$device}&fs={$fs}&type=rw&mapper={$mapper}\"'>Run with CORRECT flag</button></center>");
+write_log("<center><button type='button' onclick='document.location=\"/plugins/{$plugin}/include/fsck.php?device={$device}&fs={$fs}&luks={$luks}&serial={$serial}&check_type=rw&type="._('Done')."\"'>"._('Run with CORRECT flag')."</button></center>");
 ?>

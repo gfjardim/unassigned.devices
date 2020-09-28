@@ -13,6 +13,14 @@ Title="Edit Script"
  */
 
 $plugin = "unassigned.devices";
+$docroot = $docroot ?? $_SERVER['DOCUMENT_ROOT'] ?: '/usr/local/emhttp';
+$translations = file_exists("$docroot/webGui/include/Translations.php");
+require_once "$docroot/plugins/$plugin/include/Legacy.php";
+?>
+<?if (! $translations):?>
+<?eval('?>'.parse_file("$docroot/plugins/$plugin/EditScript.page"))?>
+<?else:?>
+<?
 require_once("plugins/{$plugin}/include/lib.php");
 
 function safe_filename($string) {
@@ -79,7 +87,7 @@ PATH=/usr/local/sbin:/usr/sbin:/sbin:/usr/local/bin:/usr/bin:/bin
 case \$ACTION in
   'ADD' )
     # do your stuff here
-	/usr/local/emhttp/webGui/scripts/notify -e "Unraid Server Notice" -s "Unassigned Devices" -d "Device added" -i "normal"
+	/usr/local/emhttp/webGui/scripts/notify -e "Unraid Server Notice" -s "Unassigned Devices" -d "Device mounted" -i "normal"
 
 	# This will refresh the UD webpage when the script is finished.
 	/usr/local/sbin/rc.unassigned refresh \$DEVICE
@@ -92,22 +100,23 @@ case \$ACTION in
 
   'REMOVE' )
     # do your stuff here
-	/usr/local/emhttp/webGui/scripts/notify -e "Unraid Server Notice" -s "Unassigned Devices" -d "Device can be removed" -i "normal"
+	/usr/local/emhttp/webGui/scripts/notify -e "Unraid Server Notice" -s "Unassigned Devices" -d "Device unmounted" -i "normal"
   ;;
 
   'ERROR_MOUNT' )
     # do your stuff here
-	/usr/local/emhttp/webGui/scripts/notify -e "Unraid Server Notice" -s "Unassigned Devices" -d "Error mounting device" -i "normal"
+	/usr/local/emhttp/webGui/scripts/notify -e "Unraid Server Notice" -s "Unassigned Devices" -d "Error mounting device" -i "alert"
   ;;
 
   'ERROR_UNMOUNT' )
     # do your stuff here
-	/usr/local/emhttp/webGui/scripts/notify -e "Unraid Server Notice" -s "Unassigned Devices" -d "Error unmounting device" -i "normal"
+	/usr/local/emhttp/webGui/scripts/notify -e "Unraid Server Notice" -s "Unassigned Devices" -d "Error unmounting device" -i "alert"
   ;;
 esac
 EOT;
 
-$remove = is_file($file) ? "<a title='Remove Script File.' class='exec' onclick='rmfile(\"{$file}\");'><i class='fa fa-times-circle' style='color:red;font-size: 25px;'></i></a> " : "";
+$prompt=_("Remove Script File");
+$remove = is_file($file) ? "<a title='$prompt' class='exec' onclick='rmfile(\"{$file}\");'><i class='fa fa-times-circle' style='color:red;font-size: 25px;'></i></a> " : "";
 ?>
 
 <script type="text/javascript" src="<?autov('/webGui/javascript/jquery.switchbutton.js')?>"></script>
@@ -127,50 +136,46 @@ $remove = is_file($file) ? "<a title='Remove Script File.' class='exec' onclick=
 		display:none;
 		color:initial;
 	}
-	.switch-button-background.checked {
-		background:#0088CC;
-		border:1px solid #0088CC;
-	}
-	.switch-wrapper {
-		display: inline-block;
-		position: relative;
-		top: 3px;
-		line-height:20px;
-	}
 </style>
 
 <form markdown="1" method="POST" action="/update.php" target="progressFrame">
 <input type="hidden" name="#include" value="/webGui/include/update.file.php">
 
 
-<input type="text" title="Enter Script File Name." name="#file" style="width:40%;" onclick="openFileBrowser(this,'/boot/config/plugins/<?=$plugin;?>/','sh',false,true);" autocomplete="off" value="<?=$file;?>"><?=$remove;?>
+<input type="text" title='_(Enter Script File Name)_.' name="#file" style="width:40%;" onclick="openFileBrowser(this,'/boot/config/plugins/<?=$plugin;?>/','sh',false,true);" autocomplete="off" value="<?=$file;?>"><?=$remove;?>
 
+:ud_edit_script_choose_name_plug:
 > Choose your script name from the file selection dropdown, or enter your desired script name.
+:end
 
-<span class="switch-wrapper" title="Turn on to run Script File in the background."><input type="checkbox" name="run_background" <?=$background;?>></span>
+<span title='_(Turn on to run Script File in the background)_.'><input type="checkbox" name="run_background" <?=$background;?>></span>
 
-> Turn on the **Run in Background** to have the script run as a background task.  This can keep the Unassigned Devices UI from hanging when the script is run from the UI.
+:ud_edit_script_run_background_plug:
+> Turn on the 'Run in Background' to have the script run as a background task.  This can keep the Unassigned Devices UI from hanging when the script is run from the UI.
+:end
 
 <br />
-<strong>Script content:</strong>
+<strong>_(Script content)_:</strong>
 <br />
 
-<textarea spellcheck="false" cols="80" rows="22" name="text" title="Enter and Edit the Script that runs when a udev or operator event occurs." style="font-family:bitstream;width:80%"><?=$text;?></textarea>
+<textarea spellcheck="false" cols="80" rows="22" name="text" title='_(Enter and Edit the Script that runs when a udev or operator event occurs)_.' style="font-family:bitstream;width:80%"><?=$text;?></textarea>
 
+:ud_edit_script_buttons_plug:
 > Click the **Save** button to commit the current edits.  Click **Reset** to undo any changes you make (before Saving). Click **Done** to exit this page.
 >
 > Click the **Default Script** button to initialize the edit box with a default script.
 > You still need to click **Save** in order to commit the change.
+:end
 
-<button type="button" title="Load the default script." onclick="setDefault(this.form)">Default Script</button>
-<input type="reset" title="Undo your changes since last Save."/>
-<input type="submit" title="Save your changes and save to Script File." value="Save"/>
-<button type="button" onclick="done()">Done</button>
+<button type="button" title='_(Load the default script)_.' onclick="setDefault(this.form)">_(Default Script)_</button>
+<input type="reset" title='_(Undo your changes since last Save)_.' value='_(Reset)_'/>
+<input type="submit" title='_(Save your changes and save to Script File)_.' value='_(Save)_'/>
+<button type="button" onclick="done()">_(Done)_</button>
 
 </form>
 
 <script>
-	$("input[name=run_background]").each(function(){var checked = $(this).is(":checked");$(this).switchButton({labels_placement: "right", checked:checked,on_label:"Run in background",off_label:"Run in background"});});
+	$("input[name=run_background]").each(function(){var checked = $(this).is(":checked");$(this).switchButton({labels_placement: "right", checked:checked,on_label:"_(Run in background)_",off_label:"_(Run in background)_"});});
 	<?if (isset($_GET['s'])):?>
 		$( "form" ).submit(function( event ) {
 			$.post("/plugins/<?=$plugin;?>/UnassignedDevices.php",{action:"set_command",serial:"<?=$serial;?>",command:$("input[name='#file']").val(),part:"<?=$partition;?>",background:$("input[name='run_background']").is(":checked")},function(data){event.preventDefault();},"json");
@@ -218,7 +223,7 @@ $remove = is_file($file) ? "<a title='Remove Script File.' class='exec' onclick=
 		// Format fileTree according to parent position, height and width
 		ft.css({'left':p.position().left,'top':( p.position().top + p.outerHeight() ),'width':(p.width()+2) });
 		// close if click elsewhere
-		$(document).mouseup(function(e){if(!ft.is(e.target) && ft.has(e.target).length === 0){$(ft).slideUp('fast',function (){$(ft).remove();});}});
+		$(document).mouseup(function(e){if (! ft.is(e.target) && ft.has(e.target).length === 0){$(ft).slideUp('fast',function (){$(ft).remove();});}});
 		// Open fileTree
 		ft.slideDown('fast');
 	}
@@ -226,5 +231,5 @@ $remove = is_file($file) ? "<a title='Remove Script File.' class='exec' onclick=
 	function rmfile(file) {
 		$.post("/update.php",{"#command":"/plugins/unassigned.devices/scripts/rm","#arg[1]":file}).done(function(){location.reload();});
 	}
-
 </script>
+<?endif;?>

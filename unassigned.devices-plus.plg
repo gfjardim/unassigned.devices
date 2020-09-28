@@ -3,11 +3,11 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name      "unassigned.devices-plus">
 <!ENTITY author    "dlandon">
-<!ENTITY version   "2020.03.01">
+<!ENTITY version   "2020.05.22">
 <!ENTITY launch    "Main/UnassignedDevices">
 <!ENTITY gitURL    "https://github.com/&author;/unassigned.devices/raw/master">
 <!ENTITY pluginURL "&gitURL;/&name;.plg">
-<!ENTITY supportURL	"https://forums.unraid.net/topic/44104-unassigned-devices-managing-disk-drives-outside-of-the-unraid-array/">
+<!ENTITY supportURL	"https://forums.unraid.net/topic/92462-unassigned-devices-managing-disk-drives-and-remote-shares-outside-of-the-unraid-array/">
 <!ENTITY packages	"/boot/config/plugins/&name;/packages">
 ]>
 
@@ -18,13 +18,17 @@
 		pluginURL="&pluginURL;"
 		support="&supportURL;"
 		icon="unlock-alt"
-		min="6.7.0"
-		max="6.8.9">
-
+		min="6.7.0">
 
 <CHANGES>
 ##&name;
 ###&version;
+- Fix: Update support link.
+
+###2020.03.08
+- Fix: Remove max version.
+
+###2020.03.06
 - Fix: Minimum version is now 6.7.  Maintaining backwards compatibility back farther is cumbersome and unnecessary.  Users are encouraged to update.
 
 ###2020.01.13
